@@ -5,3 +5,4 @@ app/video/
 # Ignore specific files
 app/download_log.log
 app/download_queue.queue
+ui/node_modules/
