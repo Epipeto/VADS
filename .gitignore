@@ -1,0 +1,7 @@
+# Ignore directories
+app/video/
+**/__pycache__/
+
+# Ignore specific files
+app/download_log.log
+app/download_queue.queue
