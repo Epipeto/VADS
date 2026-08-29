@@ -48,6 +48,27 @@ def count_url_file():
             lines = [line.strip() for line in f if line.strip()]
         return len(lines)
 
+def get_all_from_file():
+    """Ritorna tutti gli URL presenti in coda (FIFO, il primo e' quello in download)."""
+    with file_lock:
+        if not QUEUE_FILE.is_file():
+            return []
+        with open(QUEUE_FILE, "r", encoding="utf-8") as f:
+            return [line.strip() for line in f if line.strip()]
+
+def is_worker_running():
+    return download_thread is not None and download_thread.is_alive()
+
+def get_config_path():
+    if not CONFIG_FILE.is_file():
+        return ""
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return f.readline().strip().split("=")[-1].strip()
+
+def set_config_path(path):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        f.write(f"path={path}\n")
+
 """Start a worker, it will start one time, future calls will not start a new thread if the previous one is still running."""
 def start_worker_thread(path=None):
     global download_thread
@@ -87,16 +108,10 @@ def saturn_download_main(url):
         log_message(f"Configuration file '{CONFIG_FILE}' not found. Please create it with the download path.")
         return
     
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        path = f.readline().strip().split("=")[-1].strip()  # Read the path from the config file
+    path = get_config_path()
     appen_to_file(url)
     log_message(f"URL added to queue: {url}")
     start_worker_thread(path=path)
-    
-saturn_download_main("https://www.hentaisaturn.tv/hentai/aku-no-onna-kanbu-full-moon-night-r-TqzSF")
 
-    
-    
-    
 
 
