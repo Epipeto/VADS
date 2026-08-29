@@ -43,6 +43,12 @@ const addDownload = async () => {
   }
 }
 
+const path_HandlePaste = (event: ClipboardEvent) => {
+  const pastedText = event.clipboardData?.getData('text')
+  if (pastedText) {
+    downloadPath.value = pastedText.trim()
+  }
+}
 const updatePath = async () => {
   if (!downloadPath.value.trim()) return
   isSavingPath.value = true
@@ -51,6 +57,7 @@ const updatePath = async () => {
     await saveConfig(downloadPath.value.trim())
     pathSaved.value = true
     setTimeout(() => (pathSaved.value = false), 2000)
+    console.log('Path salvato con successo:', downloadPath.value.trim())
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : 'Impossibile salvare il path'
   } finally {
@@ -100,6 +107,7 @@ onUnmounted(() => {
           type="text"
           placeholder="video/"
           class="url-input"
+          @paste="path_HandlePaste"
         />
         <div class="options-group">
           <button type="submit" class="btn-primary" :disabled="isSavingPath">
