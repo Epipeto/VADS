@@ -7,9 +7,11 @@ from flask_cors import CORS
 from log_file import LOG_FILE
 from saturn_dowload_main import (
     get_all_from_file,
+    get_config_meta_data,
     get_config_path,
     is_worker_running,
     saturn_download_main,
+    set_config_metadata,
     set_config_path,
 )
 
@@ -28,6 +30,7 @@ def status():
         "queue": pending,
         "running": running,
         "path": get_config_path(),
+        "metaData": get_config_meta_data(),
     })
 
 
@@ -43,17 +46,31 @@ def add_to_queue():
 
 @app.get("/api/config")
 def read_config():
-    return jsonify({"path": get_config_path()})
+    return jsonify({
+        "path": get_config_path(),
+        "metaData": get_config_meta_data(),
+    })
 
 
 @app.post("/api/config")
 def write_config():
     data = request.get_json(silent=True) or {}
     path = (data.get("path") or "").strip()
-    if not path:
-        return jsonify({"error": "Path mancante"}), 400
-    set_config_path(path)
-    return jsonify({"ok": True, "path": path})
+    meta_data = data.get("metaData")
+
+    if not path and meta_data is None:
+        return jsonify({"error": "Nessuna impostazione da salvare"}), 400
+
+    if path:
+        set_config_path(path)
+    if meta_data is not None:
+        set_config_metadata(bool(meta_data))
+
+    return jsonify({
+        "ok": True,
+        "path": get_config_path(),
+        "metaData": get_config_meta_data(),
+    })
 
 
 @app.get("/api/logs")

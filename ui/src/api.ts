@@ -5,6 +5,12 @@ export interface StatusResponse {
   queue: string[]
   running: boolean
   path: string
+  metaData: boolean
+}
+
+export interface ConfigResponse {
+  path: string
+  metaData: boolean
 }
 
 export interface LogsResponse {
@@ -46,13 +52,13 @@ export function addToQueue(url: string) {
 }
 
 export function fetchConfig() {
-  return request<{ path: string }>('/config')
+  return request<ConfigResponse>('/config')
 }
 
-export function saveConfig(path: string) {
-  return request<{ ok: boolean; path: string }>('/config', {
+export function saveConfig(payload: { path?: string; metaData?: boolean }) {
+  return request<ConfigResponse>('/config', {
     method: 'POST',
-    body: JSON.stringify({ path }),
+    body: JSON.stringify(payload),
   })
 }
 

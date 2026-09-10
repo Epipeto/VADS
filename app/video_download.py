@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import base64
+from typing import Any, cast
 from urllib.parse import urlparse, parse_qs
 
 from log_file import log_message
@@ -64,8 +65,8 @@ def download_animesaturn_video(url, path=None, title=None):
     log_message("Searching for the iframe that contains the video.")
     # Find the iframe that contains the video
     for iframe in soup.find_all('iframe'):
-        src = iframe.get('src', '')
-        if 'stream' in src or 'embed' in src or 'watch' in src:
+        src = str(iframe.get('src') or '')
+        if src and ('stream' in src or 'embed' in src or 'watch' in src):
             embed_url = src
             break
     
@@ -116,7 +117,7 @@ def download_animesaturn_video(url, path=None, title=None):
     }
     log_message(f"Starting download with yt-dlp for URL: {direct_stream_url}")
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(cast(Any, ydl_opts)) as ydl:
             ydl.download([direct_stream_url])    
     except Exception as e:
         log_message(f"An error occurred: {e}")

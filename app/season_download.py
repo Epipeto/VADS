@@ -7,6 +7,7 @@ from video_download import download_animesaturn_video
 from log_file import log_message
 
 
+
 def sanitize_filename(name):
     if not name:
         return "unknown"
@@ -177,7 +178,7 @@ def a_info_extractor(soup_dom):
         'studio': studio.text.strip() if studio else None
     }
     
-def download_animesaturn_season(url, path=None):
+def download_animesaturn_season(url, path=None, only_meta_data=False):
     
     if "ep" in url:
         log_message("The provided URL is an episode URL. Please provide a season URL instead.")
@@ -239,6 +240,10 @@ def download_animesaturn_season(url, path=None):
         log_message("No episode links found on the page.")
         return
     
+    if only_meta_data:
+        log_message("Only metadata downloaded, skipping episode downloads as per configuration.")
+        return
+        
     log_message(f"Starting download of {len(ep_links)} episodes.")
     i = 1
     for ep in ep_links:
@@ -259,14 +264,20 @@ def to_download_single_episode(url, path, headers, ep_title, ep_number, season_n
     
     log_message("Parsing the episode page HTML of the episode.")
     soup = BeautifulSoup(response.text, 'html.parser')
-    episode_route = soup.find('a', class_='ept-btn')['href']
-    
+
+    # The "Guarda lo streaming" button points to the page that embeds the actual
+    # video player (on some layouts the episode page itself only shows a preview).
+    episode_btn = soup.find('a', class_='ept-btn--play') or soup.find('a', class_='ept-btn')
+    if episode_btn is None:
+        log_message("Could not find the episode link. Please provide the direct episode URL.")
+        return
+    episode_route = episode_btn.get('href')
     if not episode_route:
         log_message("Could not find the episode link. Please provide the direct episode URL.")
         return
     
     website_domain = url.split('/')[2]
-    episode_url = f"https://{website_domain}{episode_route}"
+    episode_url = episode_route if episode_route.startswith('http') else f"https://{website_domain}{episode_route}"
     write_jellyfin_episode_nfo(path, ep_title, ep_number, season_number=season_number)
     download_animesaturn_video(episode_url, path, title=ep_title)
     

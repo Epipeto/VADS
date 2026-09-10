@@ -11,6 +11,8 @@ const errorMessage = ref('')
 const isSubmitting = ref(false)
 const isSavingPath = ref(false)
 const pathSaved = ref(false)
+const metaDataOnly = ref(false)
+const isSavingMeta = ref(false)
 
 let pollTimer: ReturnType<typeof setInterval> | undefined
 
@@ -22,6 +24,9 @@ const refreshStatus = async () => {
     running.value = data.running
     if (document.activeElement?.id !== 'download-path-input') {
       downloadPath.value = data.path
+    }
+    if (!isSavingMeta.value) {
+      metaDataOnly.value = data.metaData
     }
     errorMessage.value = ''
   } catch (err) {
@@ -54,7 +59,8 @@ const updatePath = async () => {
   isSavingPath.value = true
   pathSaved.value = false
   try {
-    await saveConfig(downloadPath.value.trim())
+    const cfg = await saveConfig({ path: downloadPath.value.trim() })
+    metaDataOnly.value = cfg.metaData
     pathSaved.value = true
     setTimeout(() => (pathSaved.value = false), 2000)
     console.log('Path salvato con successo:', downloadPath.value.trim())
@@ -62,6 +68,22 @@ const updatePath = async () => {
     errorMessage.value = err instanceof Error ? err.message : 'Impossibile salvare il path'
   } finally {
     isSavingPath.value = false
+  }
+}
+
+const toggleMetaData = async () => {
+  if (isSavingMeta.value) return
+  isSavingMeta.value = true
+  const previous = !metaDataOnly.value
+  try {
+    const cfg = await saveConfig({ metaData: metaDataOnly.value })
+    metaDataOnly.value = cfg.metaData
+    console.log('Modalità solo metadati:', cfg.metaData ? 'attiva' : 'disattiva')
+  } catch (err) {
+    metaDataOnly.value = previous
+    errorMessage.value = err instanceof Error ? err.message : 'Impossibile salvare le impostazioni'
+  } finally {
+    isSavingMeta.value = false
   }
 }
 
@@ -118,6 +140,21 @@ onUnmounted(() => {
       </form>
     </section>
 
+    <!-- Options -->
+    <section class="card options-card">
+      <h2>Opzioni</h2>
+      <label class="meta-option" :class="{ disabled: isSavingMeta }">
+        <input
+          type="checkbox"
+          v-model="metaDataOnly"
+          :disabled="isSavingMeta"
+          @change="toggleMetaData"
+        />
+        <span>Solo metadati (scarica NFO e immagini, niente video)</span>
+        <span v-if="isSavingMeta" class="saving-hint">salvataggio...</span>
+      </label>
+    </section>
+
     <!-- Current Download -->
     <section class="card queue-card">
       <h2>Download in Corso</h2>
@@ -172,6 +209,40 @@ onUnmounted(() => {
 .saved-hint {
   color: #4caf50;
   align-self: center;
+}
+
+.options-card h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #aaaaaa;
+}
+
+.meta-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.meta-option.disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.meta-option input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ff0000;
+  cursor: pointer;
+}
+
+.saving-hint {
+  color: #ff9800;
+  font-size: 0.85rem;
 }
 
 .progress-bar.indeterminate {
