@@ -5,8 +5,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from log_file import LOG_FILE
+from download_queue import get_all_from_file
 from saturn_dowload_main import (
-    get_all_from_file,
     get_config_meta_data,
     get_config_path,
     is_worker_running,

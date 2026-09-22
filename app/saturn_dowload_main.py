@@ -1,60 +1,17 @@
 import threading
 from pathlib import Path
-from season_download import download_animesaturn_season
+
+from downloader import download_animesaturn_season
+from download_queue import (
+    append_to_file,
+    delete_first_line_from_file,
+    get_first_from_file,
+)
 from log_file import log_message
 
-QUEUE_FILE = Path("download_queue.queue")
 CONFIG_FILE = Path(".config")
-file_lock = threading.Lock()
 stop_event = threading.Event()
 download_thread = None
-
-"""append a URL to the queue file."""
-def appen_to_file(url):
-    with file_lock:
-        with open(QUEUE_FILE, "a") as f:
-            f.write(url + "\n")
-            
-def get_first_from_file():
-    """Estrae il PRIMO URL dal file senza rimuoverlo (FIFO)."""
-    with file_lock:
-        with open(QUEUE_FILE, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        
-        if not lines:
-            return None
-        
-        first_url = lines[0]
-        return first_url
-def delete_first_line_from_file():
-    """Rimuove il PRIMO URL dal file (FIFO)."""
-    with file_lock:
-        with open(QUEUE_FILE, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        
-        if not lines:
-            return
-        
-        remaining_lines = lines[1:]
-        
-        # Sovrascrive il file mantenendo solo gli elementi rimanenti
-        with open(QUEUE_FILE, "w", encoding="utf-8") as f:
-            for line in remaining_lines:
-                f.write(f"{line}\n")
-
-def count_url_file():
-    with file_lock:
-        with open(QUEUE_FILE, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        return len(lines)
-
-def get_all_from_file():
-    """Ritorna tutti gli URL presenti in coda (FIFO, il primo e' quello in download)."""
-    with file_lock:
-        if not QUEUE_FILE.is_file():
-            return []
-        with open(QUEUE_FILE, "r", encoding="utf-8") as f:
-            return [line.strip() for line in f if line.strip()]
 
 def is_worker_running():
     return download_thread is not None and download_thread.is_alive()
@@ -141,7 +98,7 @@ def saturn_download_main(url):
     
     path = get_config_path()
     only_meta_data = get_config_meta_data()
-    appen_to_file(url)
+    append_to_file(url)
     log_message(f"URL added to queue: {url}")
     start_worker_thread(path=path, only_meta_data=only_meta_data)
 

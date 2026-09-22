@@ -2,9 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
+from urllib.parse import urljoin
 from xml.sax.saxutils import escape
-from video_download import download_animesaturn_video
+
 from log_file import log_message
+
+from .video_download import download_animesaturn_video
 
 
 
@@ -271,13 +274,15 @@ def to_download_single_episode(url, path, headers, ep_title, ep_number, season_n
     if episode_btn is None:
         log_message("Could not find the episode link. Please provide the direct episode URL.")
         return
-    episode_route = episode_btn.get('href')
+    # .get() can return an AttributeValueList (multi-valued attr), so coerce to str.
+    episode_route = str(episode_btn.get('href') or '').strip()
     if not episode_route:
         log_message("Could not find the episode link. Please provide the direct episode URL.")
         return
     
-    website_domain = url.split('/')[2]
-    episode_url = episode_route if episode_route.startswith('http') else f"https://{website_domain}{episode_route}"
+    # Resolve the play-button href against the episode page URL. urljoin handles
+    # absolute URLs, protocol-relative ("//host/path") and root/relative paths.
+    episode_url = urljoin(url, episode_route)
     write_jellyfin_episode_nfo(path, ep_title, ep_number, season_number=season_number)
     download_animesaturn_video(episode_url, path, title=ep_title)
     
