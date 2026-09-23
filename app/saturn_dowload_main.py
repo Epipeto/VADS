@@ -1,7 +1,7 @@
 import threading
 from pathlib import Path
 
-from downloader import download_animesaturn_season
+from downloader import saturn_download
 from download_queue import (
     append_to_file,
     delete_first_line_from_file,
