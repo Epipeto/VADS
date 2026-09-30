@@ -6,11 +6,11 @@ from flask_cors import CORS
 
 from log_file import LOG_FILE
 from download_queue import get_all_from_file
-from saturn_dowload_main import (
+from main_download import (
+    download_main,
     get_config_meta_data,
     get_config_path,
     is_worker_running,
-    saturn_download_main,
     set_config_metadata,
     set_config_path,
 )
@@ -40,7 +40,7 @@ def add_to_queue():
     url = (data.get("url") or "").strip()
     if not url:
         return jsonify({"error": "URL mancante"}), 400
-    saturn_download_main(url)
+    download_main(url)
     return jsonify({"ok": True})
 
 
